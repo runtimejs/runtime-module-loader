@@ -23,7 +23,7 @@ function Loader(existsFileFn, readFileFn, evalScriptFn) {
     var module = this;
     var resolvedPath = resolve(module, path);
     if (!resolvedPath) {
-      throwError(new Error("Cannot resolve require '" + path + "' from '" + module.filename + "'"));
+      throwError(new Error("Cannot resolve module '" + path + "' from '" + module.filename + "'"));
     }
 
     // eval file
@@ -127,6 +127,32 @@ function Loader(existsFileFn, readFileFn, evalScriptFn) {
     return loadAsFile(normalizedPath.join('/'));
   }
 
+  function loadNodeModules(dirComponents, parts) {
+    var count = dirComponents.length;
+
+    while (count-- > 0) {
+      var p = dirComponents.slice(0, count + 1);
+      if (p.length === 0) {
+        continue;
+      }
+
+      if (p[p.length - 1] === 'node_modules') {
+        continue;
+      }
+
+      p.push('node_modules');
+      p = p.concat(parts);
+
+      var s = normalizePath(p).join('/');
+      var loadedPath = loadAsFile(s) || loadAsDirectory(s) || null;
+      if (loadedPath) {
+        return loadedPath;
+      }
+    }
+
+    return null;
+  }
+
   function resolve(module, path) {
     path = String(path || '');
 
@@ -148,10 +174,10 @@ function Loader(existsFileFn, readFileFn, evalScriptFn) {
 
       var pathStr = normalizedPath.join('/');
       var loadedPath = loadAsFile(pathStr) || loadAsDirectory(pathStr) || null;
-      //console.log(path + ' --> ' + loadedPath);
-
       return loadedPath;
     }
+
+    return loadNodeModules(module.dirComponents, pathComponents);
   }
 
   this.require = function require(path) {

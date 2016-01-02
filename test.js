@@ -136,3 +136,83 @@ test('package.json main field', function(t) {
   t.equal(global.count, 3);
   t.end();
 });
+
+test('require from node_modules', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/a.js': "++count; exports.foo = 1;",
+    '/node_modules/b.js': "++count; exports.foo = 4;",
+    '/main.js': "++count; module.exports = require('a').foo + require('b').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 5);
+  t.equal(modules.readCount(), 3);
+  t.equal(global.count, 3);
+  t.end();
+});
+
+test('require from node_modules specific path', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/a/hello.js': "++count; exports.foo = 1;",
+    '/node_modules/b.js': "++count; exports.foo = 4;",
+    '/main.js': "++count; module.exports = require('a/hello').foo + require('b').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 5);
+  t.equal(modules.readCount(), 3);
+  t.equal(global.count, 3);
+  t.end();
+});
+
+test('require from node_modules nested', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/a.js': "++count; exports.foo = 1;",
+    '/node_modules/b.js': "++count; exports.foo = 4;",
+    '/node_modules/module/node_modules/a.js': "++count; exports.foo = 11;",
+    '/node_modules/module/node_modules/b.js': "++count; exports.foo = 41;",
+    '/node_modules/module/index.js': "++count; module.exports = require('a').foo + require('b').foo;",
+    '/main.js': "++count; module.exports = require('a').foo + require('b').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 5);
+  t.equal(loader.require('module'), 52);
+  t.equal(modules.readCount(), 6);
+  t.equal(global.count, 6);
+  t.end();
+});
+
+test('require from node_modules nested directory', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/a/index.js': "++count; exports.foo = 1;",
+    '/node_modules/b/index.js': "++count; exports.foo = 4;",
+    '/node_modules/module/node_modules/a/index.js': "++count; exports.foo = 11;",
+    '/node_modules/module/node_modules/b/index.js': "++count; exports.foo = 41;",
+    '/node_modules/module/index.js': "++count; module.exports = require('a').foo + require('b').foo;",
+    '/main.js': "++count; module.exports = require('a').foo + require('b').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 5);
+  t.equal(loader.require('module'), 52);
+  t.equal(modules.readCount(), 6);
+  t.equal(global.count, 6);
+  t.end();
+});
+
+test('require from node_modules nested search', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/a.js': "++count; exports.foo = 1;",
+    '/node_modules/b.js': "++count; exports.foo = 4;",
+    '/node_modules/module/index.js': "++count; module.exports = require('a').foo + require('b').foo;",
+    '/main.js': "++count; module.exports = require('a').foo + require('b').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 5);
+  t.equal(loader.require('module'), 5);
+  t.equal(modules.readCount(), 4);
+  t.equal(global.count, 4);
+  t.end();
+});
