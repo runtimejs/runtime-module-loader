@@ -1,0 +1,22 @@
+{
+  "name": "runtime-module-loader",
+  "version": "0.0.0",
+  "description": "Node.js compatible module loader for runtime.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:runtimejs/runtime-module-loader.git"
+  },
+  "author": "Sergii Iefremov <iefserge@runtimejs.org>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/runtimejs/runtime-module-loader/issues"
+  },
+  "homepage": "https://github.com/runtimejs/runtime-module-loader",
+  "devDependencies": {
+    "tape": "^4.0.0"
+  }
+}
