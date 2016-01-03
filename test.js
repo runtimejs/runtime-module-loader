@@ -216,3 +216,34 @@ test('require from node_modules nested search', function(t) {
   t.equal(global.count, 4);
   t.end();
 });
+
+test('should not load from dependency from nested node_modules', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/dep/node_modules/a.js': "++count; exports.foo = 1;",
+    '/node_modules/dep/node_modules/b.js': "++count; exports.foo = 4;",
+    '/main.js': "++count; module.exports = require('a').foo + require('b').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.throws(function () {
+    loader.require('/main');
+  }, /Cannot resolve module 'a' from '\/main.js'/);
+  t.equal(modules.readCount(), 1);
+  t.equal(global.count, 1);
+  t.end();
+});
+
+test('native module error', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/module.node': "<binary>",
+    '/main.js': "++count; module.exports = require('module')"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.throws(function () {
+    loader.require('/main');
+  }, /Native Node.js modules are not supported '\/node_modules\/module.node'/);
+  t.equal(modules.readCount(), 1);
+  t.equal(global.count, 1);
+  t.end();
+});

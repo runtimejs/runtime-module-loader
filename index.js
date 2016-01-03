@@ -39,6 +39,10 @@ function Loader(existsFileFn, readFileFn, evalScriptFn) {
     cache[cacheKey] = module;
     global.module = module;
 
+    if (endsWith(resolvedPath, '.node')) {
+      throwError(new Error("Native Node.js modules are not supported '" + resolvedPath + "'"));
+    }
+
     var content = readFileFn(resolvedPath);
     if (!content) {
       throwError(new Error("Cannot load module '" + resolvedPath + "'"));
@@ -98,6 +102,10 @@ function Loader(existsFileFn, readFileFn, evalScriptFn) {
 
     if (existsFileFn(path + '.json')) {
       return path + '.json';
+    }
+
+    if (existsFileFn(path + '.node')) {
+      return path + '.node';
     }
 
     return null;
