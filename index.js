@@ -161,7 +161,12 @@ function Loader(existsFileFn, readFileFn, evalScriptFn) {
       p.push('node_modules');
       p = p.concat(parts);
 
-      var s = normalizePath(p).join('/');
+      var normalizedPath = normalizePath(p);
+      if (!normalizedPath) {
+        continue;
+      }
+
+      var s = normalizedPath.join('/');
       var loadedPath = loadAsFile(s) || loadAsDirectory(s) || null;
       if (loadedPath) {
         return loadedPath;

@@ -128,6 +128,21 @@ test('handle invalid ..', function(t) {
   t.end();
 });
 
+test('handle invalid .. using node_modules', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/dir/module.js': "++count; module.exports = require('module/a/../../../../../a') + 8;",
+    '/main.js': "++count; module.exports = require('/dir/module.js')"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.throws(function() {
+    loader.require('/main');
+  }, rgx("Cannot resolve module 'module/a/../../../../../a' from '/dir/module.js'"));
+  t.equal(modules.readCount(), 2);
+  t.equal(global.count, 2);
+  t.end();
+});
+
 test('require directory', function(t) {
   global.count = 0;
   var modules = defineModules({
