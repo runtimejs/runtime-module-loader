@@ -1,7 +1,8 @@
 'use strict';
 
-function Loader(existsFileFn, readFileFn, evalScriptFn) {
+function Loader(existsFileFn, readFileFn, evalScriptFn, builtins) {
   var cache = {};
+  builtins = builtins || {};
 
   function throwError(err) {
     throw err;
@@ -178,6 +179,10 @@ function Loader(existsFileFn, readFileFn, evalScriptFn) {
 
   function resolve(module, path) {
     path = String(path || '');
+
+    if (builtins.hasOwnProperty(path)) {
+      path = builtins[path];
+    }
 
     var pathComponents = path.split('/');
     var firstPathComponent = pathComponents[0];

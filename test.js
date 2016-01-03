@@ -233,6 +233,23 @@ test('require from node_modules', function(t) {
   t.end();
 });
 
+test('builtin module', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/a.js': "++count; exports.foo = 1;",
+    '/node_modules/b.js': "++count; exports.foo = 4;",
+    '/node_modules/builtin-a.js': "++count; exports.foo = 10;",
+    '/main.js': "++count; module.exports = require('a').foo + require('b').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript, {
+    'a': '/node_modules/builtin-a.js'
+  });
+  t.equal(loader.require('/main'), 14);
+  t.equal(modules.readCount(), 3);
+  t.equal(global.count, 3);
+  t.end();
+});
+
 test('require from node_modules specific path', function(t) {
   global.count = 0;
   var modules = defineModules({
