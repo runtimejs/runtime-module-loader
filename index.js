@@ -187,7 +187,7 @@ function Loader(existsFileFn, readFileFn, evalScriptFn) {
 
       var normalizedPath = normalizePath(combinedPathComponents);
       if (!normalizedPath) {
-        throw new Error();
+        return null;
       }
 
       var pathStr = normalizedPath.join('/');

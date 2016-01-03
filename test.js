@@ -1,6 +1,11 @@
 var test = require('tape');
 var Loader = require('./');
 var vm = require('vm');
+var escapeStringRegexp = require('escape-string-regexp');
+
+function rgx(message) {
+  return new RegExp(escapeStringRegexp(message));
+}
 
 function evalScript(content, filename) {
   return vm.runInThisContext(content, filename);
@@ -108,6 +113,21 @@ test('handle . and ..', function(t) {
   t.end();
 });
 
+test('handle invalid ..', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/dir/module.js': "++count; module.exports = require('../../../../../../a') + 8;",
+    '/main.js': "++count; module.exports = require('/dir/module.js')"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.throws(function() {
+    loader.require('/main');
+  }, rgx("Cannot resolve module '../../../../../../a' from '/dir/module.js'"));
+  t.equal(modules.readCount(), 2);
+  t.equal(global.count, 2);
+  t.end();
+});
+
 test('require directory', function(t) {
   global.count = 0;
   var modules = defineModules({
@@ -163,7 +183,7 @@ test('package.json runtime invalid value', function(t) {
   var loader = new Loader(modules.exists, modules.read, evalScript);
   t.throws(function() {
     loader.require('/main');
-  }, /package.json '\/dir\/package.json' runtime field value is invalid/);
+  }, rgx("package.json '/dir/package.json' runtime field value is invalid"));
   t.equal(modules.readCount(), 2);
   t.equal(global.count, 1);
   t.end();
@@ -178,7 +198,7 @@ test('package.json parse error', function(t) {
   var loader = new Loader(modules.exists, modules.read, evalScript);
   t.throws(function() {
     loader.require('/main');
-  }, /package.json '\/dir\/package.json' parse error/);
+  }, rgx("package.json '/dir/package.json' parse error"));
   t.equal(modules.readCount(), 2);
   t.equal(global.count, 1);
   t.end();
@@ -274,7 +294,7 @@ test('should not load from dependency from nested node_modules', function(t) {
   var loader = new Loader(modules.exists, modules.read, evalScript);
   t.throws(function () {
     loader.require('/main');
-  }, /Cannot resolve module 'a' from '\/main.js'/);
+  }, rgx("Cannot resolve module 'a' from '/main.js'"));
   t.equal(modules.readCount(), 1);
   t.equal(global.count, 1);
   t.end();
@@ -289,7 +309,7 @@ test('native module error', function(t) {
   var loader = new Loader(modules.exists, modules.read, evalScript);
   t.throws(function () {
     loader.require('/main');
-  }, /Native Node.js modules are not supported '\/node_modules\/module.node'/);
+  }, rgx("Native Node.js modules are not supported '/node_modules/module.node'"));
   t.equal(modules.readCount(), 1);
   t.equal(global.count, 1);
   t.end();
@@ -304,7 +324,7 @@ test('module syntax error', function(t) {
   var loader = new Loader(modules.exists, modules.read, evalScript);
   t.throws(function () {
     loader.require('/main');
-  }, /Unexpected identifier/);
+  }, rgx("Unexpected identifier"));
   t.equal(modules.readCount(), 2);
   t.equal(global.count, 1);
   t.end();
@@ -319,7 +339,7 @@ test('module throws', function(t) {
   var loader = new Loader(modules.exists, modules.read, evalScript);
   t.throws(function () {
     loader.require('/main');
-  }, /custom error/);
+  }, rgx("custom error"));
   t.equal(modules.readCount(), 2);
   t.equal(global.count, 1);
   t.end();

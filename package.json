@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/runtimejs/runtime-module-loader",
   "devDependencies": {
+    "escape-string-regexp": "^1.0.4",
     "tape": "^4.0.0"
   }
 }
