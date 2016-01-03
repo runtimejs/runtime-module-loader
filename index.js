@@ -113,12 +113,22 @@ function Loader(existsFileFn, readFileFn, evalScriptFn) {
 
   function getPackageMain(packageJsonFile) {
     var json = readFileFn(packageJsonFile);
+    var parsed = null;
     try {
       var parsed = JSON.parse(json);
-      return parsed.main || 'index.js';
     } catch (e) {
-      return null;
+      throwError(new Error("package.json '" + packageJsonFile + "' parse error"));
     }
+
+    if (parsed.runtime) {
+      if (typeof parsed.runtime === 'string') {
+        return parsed.runtime;
+      } else {
+        throwError(new Error("package.json '" + packageJsonFile + "' runtime field value is invalid"));
+      }
+    }
+
+    return parsed.main || 'index.js';
   }
 
   function loadAsDirectory(path) {

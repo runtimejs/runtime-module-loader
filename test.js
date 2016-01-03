@@ -137,6 +137,53 @@ test('package.json main field', function(t) {
   t.end();
 });
 
+test('package.json runtime field', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/dir/abc.js': "++count; exports.foo = 1;",
+    '/dir/abc-runtime.js': "++count; exports.foo = 15;",
+    '/dir/package.json': '{"main":"abc.js","runtime":"./abc-runtime"}',
+    '/main.js': "++count; module.exports = require('./dir').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 15);
+  t.equal(modules.readCount(), 3);
+  t.equal(global.count, 2);
+  t.end();
+});
+
+test('package.json runtime invalid value', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/dir/abc.js': "++count; exports.foo = 1;",
+    '/dir/abc-runtime.js': "++count; exports.foo = 15;",
+    '/dir/package.json': '{"main":"abc.js","runtime":{"a":"bc"}}',
+    '/main.js': "++count; module.exports = require('./dir').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.throws(function() {
+    loader.require('/main');
+  }, /package.json '\/dir\/package.json' runtime field value is invalid/);
+  t.equal(modules.readCount(), 2);
+  t.equal(global.count, 1);
+  t.end();
+});
+
+test('package.json parse error', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/dir/package.json': '{"main"}',
+    '/main.js': "++count; module.exports = require('./dir').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.throws(function() {
+    loader.require('/main');
+  }, /package.json '\/dir\/package.json' parse error/);
+  t.equal(modules.readCount(), 2);
+  t.equal(global.count, 1);
+  t.end();
+});
+
 test('require from node_modules', function(t) {
   global.count = 0;
   var modules = defineModules({
@@ -244,6 +291,36 @@ test('native module error', function(t) {
     loader.require('/main');
   }, /Native Node.js modules are not supported '\/node_modules\/module.node'/);
   t.equal(modules.readCount(), 1);
+  t.equal(global.count, 1);
+  t.end();
+});
+
+test('module syntax error', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/a.js': "\nvar z = { hello world };",
+    '/main.js': "++count; module.exports = require('a')"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.throws(function () {
+    loader.require('/main');
+  }, /Unexpected identifier/);
+  t.equal(modules.readCount(), 2);
+  t.equal(global.count, 1);
+  t.end();
+});
+
+test('module throws', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/node_modules/a.js': "\nthrow new Error('custom error');",
+    '/main.js': "++count; module.exports = require('a')"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.throws(function () {
+    loader.require('/main');
+  }, /custom error/);
+  t.equal(modules.readCount(), 2);
   t.equal(global.count, 1);
   t.end();
 });
