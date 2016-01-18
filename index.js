@@ -1,7 +1,9 @@
 'use strict';
 
-function Loader(existsFileFn, readFileFn, evalScriptFn, builtins) {
+function Loader(existsFileFn, readFileFn, evalScriptFn, builtins, builtinsResolveFrom) {
+  builtinsResolveFrom = builtinsResolveFrom || '/';
   var cache = {};
+  var builtinsResolveFromComponents = builtinsResolveFrom.split('/');
   builtins = builtins || {};
 
   function throwError(err) {
@@ -180,8 +182,11 @@ function Loader(existsFileFn, readFileFn, evalScriptFn, builtins) {
   function resolve(module, path) {
     path = String(path || '');
 
+    var resolveFrom = module.dirComponents;
+
     if (builtins.hasOwnProperty(path)) {
       path = builtins[path];
+      resolveFrom = builtinsResolveFromComponents;
     }
 
     var pathComponents = path.split('/');
@@ -193,7 +198,7 @@ function Loader(existsFileFn, readFileFn, evalScriptFn, builtins) {
         firstPathComponent === '') {
       var combinedPathComponents = (firstPathComponent === '')
         ? pathComponents
-        : module.dirComponents.concat(pathComponents);
+        : resolveFrom.concat(pathComponents);
 
       var normalizedPath = normalizePath(combinedPathComponents);
       if (!normalizedPath) {
@@ -205,7 +210,7 @@ function Loader(existsFileFn, readFileFn, evalScriptFn, builtins) {
       return loadedPath;
     }
 
-    return loadNodeModules(module.dirComponents, pathComponents);
+    return loadNodeModules(resolveFrom, pathComponents);
   }
 
   this.require = function require(path) {
