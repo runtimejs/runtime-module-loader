@@ -62,6 +62,20 @@ test('full path require', function(t) {
   t.end();
 });
 
+test('require scope binding', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/subdir/module2.js': "++count; exports.foo = 10;",
+    '/subdir/module.js': "++count; exports.foo = function() { return require('./module2').foo; };",
+    '/main.js': "++count; module.exports = require('./subdir/module').foo()"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 10);
+  t.equal(modules.readCount(), 3);
+  t.equal(global.count, 3);
+  t.end();
+});
+
 test('full name require', function(t) {
   global.count = 0;
   var modules = defineModules({
