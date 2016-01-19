@@ -1,6 +1,6 @@
 {
   "name": "runtime-module-loader",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Node.js compatible module loader for runtime.js",
   "main": "index.js",
   "scripts": {
