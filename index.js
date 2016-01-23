@@ -134,10 +134,12 @@ function Loader(existsFileFn, readFileFn, evalScriptFn, builtins, builtinsResolv
     return parsed.main || 'index.js';
   }
 
-  function loadAsDirectory(path) {
+  function loadAsDirectory(path, ignoreJson) {
     var mainFile = 'index';
-    if (existsFileFn(path + '/package.json')) {
+    var dir = false;
+    if (!ignoreJson && existsFileFn(path + '/package.json')) {
       mainFile = getPackageMain(path + '/package.json') || 'index';
+      dir = true;
     }
 
     var normalizedPath = normalizePath(path.split('/').concat(mainFile.split('/')));
@@ -145,7 +147,17 @@ function Loader(existsFileFn, readFileFn, evalScriptFn, builtins, builtinsResolv
       return null;
     }
 
-    return loadAsFile(normalizedPath.join('/'));
+    var s = normalizedPath.join('/');
+    var res = loadAsFile(s);
+    if (res) {
+      return res;
+    }
+
+    if (dir) {
+      return loadAsDirectory(s, true);
+    }
+
+    return null;
   }
 
   function loadNodeModules(dirComponents, parts) {
@@ -170,7 +182,7 @@ function Loader(existsFileFn, readFileFn, evalScriptFn, builtins, builtinsResolv
       }
 
       var s = normalizedPath.join('/');
-      var loadedPath = loadAsFile(s) || loadAsDirectory(s) || null;
+      var loadedPath = loadAsFile(s) || loadAsDirectory(s, false) || null;
       if (loadedPath) {
         return loadedPath;
       }
@@ -206,7 +218,7 @@ function Loader(existsFileFn, readFileFn, evalScriptFn, builtins, builtinsResolv
       }
 
       var pathStr = normalizedPath.join('/');
-      var loadedPath = loadAsFile(pathStr) || loadAsDirectory(pathStr) || null;
+      var loadedPath = loadAsFile(pathStr) || loadAsDirectory(pathStr, false) || null;
       return loadedPath;
     }
 

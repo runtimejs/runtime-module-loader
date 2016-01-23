@@ -186,6 +186,55 @@ test('package.json main field', function(t) {
   t.end();
 });
 
+test('package.json main field dir', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/dir/abc.js': "++count; exports.foo = 1;",
+    '/dir/package.json': '{"main":"abc.js"}',
+    '/dir2/lib/index.js': "++count; exports.foo = 2;",
+    '/dir2/package.json': '{"main":"./lib"}',
+    '/main.js': "++count; module.exports = require('./dir').foo + require('./dir2').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 3);
+  t.equal(modules.readCount(), 5);
+  t.equal(global.count, 3);
+  t.end();
+});
+
+test('package.json main field dir self recursive', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/dir/abc.js': "++count; exports.foo = 1;",
+    '/dir/package.json': '{"main":"abc.js"}',
+    '/dir2/index.js': "++count; exports.foo = 2;",
+    '/dir2/package.json': '{"main":"./"}',
+    '/main.js': "++count; module.exports = require('./dir').foo + require('./dir2').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 3);
+  t.equal(modules.readCount(), 5);
+  t.equal(global.count, 3);
+  t.end();
+});
+
+test('package.json main field dir ignore nested package.json', function(t) {
+  global.count = 0;
+  var modules = defineModules({
+    '/dir/abc.js': "++count; exports.foo = 1;",
+    '/dir/package.json': '{"main":"abc.js"}',
+    '/dir2/lib/index.js': "++count; exports.foo = 2;",
+    '/dir2/lib/package.json': '{"main":".."}',
+    '/dir2/package.json': '{"main":"./lib"}',
+    '/main.js': "++count; module.exports = require('./dir').foo + require('./dir2').foo;"
+  });
+  var loader = new Loader(modules.exists, modules.read, evalScript);
+  t.equal(loader.require('/main'), 3);
+  t.equal(modules.readCount(), 5);
+  t.equal(global.count, 3);
+  t.end();
+});
+
 test('package.json runtime field', function(t) {
   global.count = 0;
   var modules = defineModules({
